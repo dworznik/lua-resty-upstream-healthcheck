@@ -1,4 +1,4 @@
-OPENRESTY_PREFIX=/usr/local/openresty
+OPENRESTY_PREFIX=/usr/src/work
 
 PREFIX ?=          /usr/local
 LUA_INCLUDE_DIR ?= $(PREFIX)/include
@@ -16,3 +16,5 @@ install: all
 test: all
 	PATH=$(OPENRESTY_PREFIX)/nginx/sbin:$$PATH prove -I../test-nginx/lib -r t
 
+docker-test:
+	docker-compose up --build test
