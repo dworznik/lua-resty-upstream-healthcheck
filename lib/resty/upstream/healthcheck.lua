@@ -229,15 +229,15 @@ local function check_peer(ctx, id, peer, is_backup)
         end
         return peer_fail(ctx, is_backup, id, peer)
     end
+    local http = require('resty.upstream.http')
+    local bytes, err = http.send_get(sock, req.path, req.headers)
 
-    local bytes, err = sock:send(req)
     if not bytes then
         return peer_error(ctx, is_backup, id, peer,
                           "failed to send request to ", name, ": ", err)
     end
-
-    local status_line, err = sock:receive()
-    if not status_line then
+    local status, err = http.receive_status(sock)
+    if err then
         peer_error(ctx, is_backup, id, peer,
                    "failed to receive status line from ", name, ": ", err)
         if err == "timeout" then
@@ -247,22 +247,6 @@ local function check_peer(ctx, id, peer, is_backup)
     end
 
     if statuses then
-        local from, to, err = re_find(status_line,
-                                      [[^HTTP/\d+\.\d+\s+(\d+)]],
-                                      "joi", nil, 1)
-        if err then
-            errlog("failed to parse status line: ", err)
-        end
-
-        if not from then
-            peer_error(ctx, is_backup, id, peer,
-                       "bad status line from ", name, ": ",
-                       status_line)
-            sock:close()
-            return
-        end
-
-        local status = tonumber(sub(status_line, from, to))
         if not statuses[status] then
             peer_error(ctx, is_backup, id, peer, "bad status code from ",
                        name, ": ", status)

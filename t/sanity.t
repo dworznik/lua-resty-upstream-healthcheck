@@ -63,7 +63,8 @@ init_worker_by_lua '
         shm = "healthcheck",
         upstream = "foo.com",
         type = "http",
-        http_req = "GET /status HTTP/1.0\\\\r\\\\nHost: localhost\\\\r\\\\n\\\\r\\\\n",
+        -- http_req = "GET /status HTTP/1.0\\\\r\\\\nHost: localhost\\\\r\\\\n\\\\r\\\\n",
+        http_req = { method = "GET", path = "/status", headers = { Host = "localhost"}},
         interval = 100,  -- 100ms
         fall = 2,
     }
@@ -159,7 +160,8 @@ init_worker_by_lua '
         shm = "healthcheck",
         upstream = "foo.com",
         type = "http",
-        http_req = "GET /status HTTP/1.0\\\\r\\\\nHost: localhost\\\\r\\\\n\\\\r\\\\n",
+        -- http_req = "GET /status HTTP/1.0\\\\r\\\\nHost: localhost\\\\r\\\\n\\\\r\\\\n",
+        http_req = { method = "GET", path = "/status", headers = { Host = "localhost"}},
         interval = 100,  -- 100ms
         fall = 2,
     }
@@ -259,7 +261,8 @@ init_worker_by_lua '
         shm = "healthcheck",
         upstream = "foo.com",
         type = "http",
-        http_req = "GET /status HTTP/1.0\\\\r\\\\nHost: localhost\\\\r\\\\n\\\\r\\\\n",
+        -- http_req = "GET /status HTTP/1.0\\\\r\\\\nHost: localhost\\\\r\\\\n\\\\r\\\\n",
+        http_req = { method = "GET", path = "/status", headers = { Host = "localhost"}},
         interval = 100,  -- 100ms
         fall = 2,
     }
@@ -365,7 +368,8 @@ init_worker_by_lua '
         shm = "healthcheck",
         upstream = "foo.com",
         type = "http",
-        http_req = "GET /status HTTP/1.0\\\\r\\\\nHost: localhost\\\\r\\\\n\\\\r\\\\n",
+        -- http_req = "GET /status HTTP/1.0\\\\r\\\\nHost: localhost\\\\r\\\\n\\\\r\\\\n",
+        http_req = { method = "GET", path = "/status", headers = { Host = "localhost"}},
         interval = 100,  -- 100ms
         fall = 2,
         valid_statuses = {200, 503},
@@ -472,7 +476,8 @@ init_worker_by_lua '
         shm = "healthcheck",
         upstream = "foo.com",
         type = "http",
-        http_req = "GET /status HTTP/1.0\\\\r\\\\nHost: localhost\\\\r\\\\n\\\\r\\\\n",
+        -- http_req = "GET /status HTTP/1.0\\\\r\\\\nHost: localhost\\\\r\\\\n\\\\r\\\\n",
+        http_req = { method = "GET", path = "/status", headers = { Host = "localhost"}},
         interval = 100,  -- 100ms
         timeout = 100,  -- 100ms
         fall = 2,
@@ -589,7 +594,8 @@ init_worker_by_lua '
         shm = "healthcheck",
         upstream = "foo.com",
         type = "http",
-        http_req = "GET /status HTTP/1.0\\\\r\\\\nHost: localhost\\\\r\\\\n\\\\r\\\\n",
+        -- http_req = "GET /status HTTP/1.0\\\\r\\\\nHost: localhost\\\\r\\\\n\\\\r\\\\n",
+        http_req = { method = "GET", path = "/status", headers = { Host = "localhost"}},
         interval = 100,  -- 100ms
         fall = 1,
         rise = 2,
@@ -710,7 +716,8 @@ init_worker_by_lua '
         shm = "healthcheck",
         upstream = "foo.com",
         type = "http",
-        http_req = "GET /status HTTP/1.0\\\\r\\\\nHost: localhost\\\\r\\\\n\\\\r\\\\n",
+        -- http_req = "GET /status HTTP/1.0\\\\r\\\\nHost: localhost\\\\r\\\\n\\\\r\\\\n",
+        http_req = { method = "GET", path = "/status", headers = { Host = "localhost"}},
         interval = 100,  -- 100ms
         fall = 2,
     }
@@ -815,7 +822,8 @@ init_worker_by_lua '
         shm = "healthcheck",
         upstream = "foo.com",
         type = "http",
-        http_req = "GET /status HTTP/1.0\\\\r\\\\nHost: localhost\\\\r\\\\n\\\\r\\\\n",
+        -- http_req = "GET /status HTTP/1.0\\\\r\\\\nHost: localhost\\\\r\\\\n\\\\r\\\\n",
+        http_req = { method = "GET", path = "/status", headers = { Host = "localhost"}},
         interval = 100,  -- 100ms
         fall = 2,
     }
@@ -905,7 +913,8 @@ init_worker_by_lua '
         shm = "healthcheck",
         upstream = "foo.com",
         type = "http",
-        http_req = "GET /status HTTP/1.0\\\\r\\\\nHost: localhost\\\\r\\\\n\\\\r\\\\n",
+        -- http_req = "GET /status HTTP/1.0\\\\r\\\\nHost: localhost\\\\r\\\\n\\\\r\\\\n",
+        http_req = { method = "GET", path = "/status", headers = { Host = "localhost"}},
         interval = 100,  -- 100ms
         fall = 2,
         concurrency = 2,
@@ -967,7 +976,8 @@ init_worker_by_lua '
         shm = "healthcheck",
         upstream = "foo.com",
         type = "http",
-        http_req = "GET /status HTTP/1.0\\\\r\\\\nHost: localhost\\\\r\\\\n\\\\r\\\\n",
+        -- http_req = "GET /status HTTP/1.0\\\\r\\\\nHost: localhost\\\\r\\\\n\\\\r\\\\n",
+        http_req = { method = "GET", path = "/status", headers = { Host = "localhost"}},
         interval = 100,  -- 100ms
         fall = 2,
         concurrency = 3,
@@ -1032,7 +1042,8 @@ init_worker_by_lua '
         shm = "healthcheck",
         upstream = "foo.com",
         type = "http",
-        http_req = "GET /status HTTP/1.0\\\\r\\\\nHost: localhost\\\\r\\\\n\\\\r\\\\n",
+        -- http_req = "GET /status HTTP/1.0\\\\r\\\\nHost: localhost\\\\r\\\\n\\\\r\\\\n",
+        http_req = { method = "GET", path = "/status", headers = { Host = "localhost"}},
         interval = 100,  -- 100ms
         fall = 1,
         valid_statuses = {200},
@@ -1127,7 +1138,8 @@ init_worker_by_lua_block {
             shm = "healthcheck",
             upstream = upstream,
             type = "http",
-            http_req = "GET /status HTTP/1.0\r\nHost: localhost\r\n\r\n",
+            -- http_req = "GET /status HTTP/1.0\r\nHost: localhost\r\n\r\n",
+            http_req = { method = "GET", path = "/status", headers = { Host = "localhost"}},
             interval = 50,  -- ms
             fall = 1,
             valid_statuses = {200, 503},
@@ -1310,7 +1322,8 @@ init_worker_by_lua_block {
         shm = "healthcheck",
         upstream = "foo.com",
         type = "http",
-        http_req = "GET /status HTTP/1.0\r\nHost: localhost\r\n\r\n",
+        -- http_req = "GET /status HTTP/1.0\r\nHost: localhost\r\n\r\n",
+        http_req = { method = "GET", path = "/status", headers = { Host = "localhost"}},
         interval = 100,  -- 100ms
         fall = 2,
     }
@@ -1410,7 +1423,8 @@ lua_shared_dict healthcheck 1m;
                 shm = "healthcheck",
                 upstream = "foo.com",
                 type = "http",
-                http_req = "GET /status HTTP/1.0\r\nHost: localhost\r\n\r\n",
+                -- http_req = "GET /status HTTP/1.0\r\nHost: localhost\r\n\r\n",
+                http_req = { method = "GET", path = "/status", headers = { Host = "localhost"}},
                 timeout = 100,
                 fall = 1,
                 concurrency = 2,
