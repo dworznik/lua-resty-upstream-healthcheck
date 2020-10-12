@@ -280,6 +280,8 @@ local function check_peer(ctx, id, peer, is_backup)
         if not ret then
             peer_error(ctx, is_backup, id, peer,
                     "failed http_res_fn on response from ", name, ": ", err)
+            sock:close()
+            return
         end
     end
 

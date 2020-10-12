@@ -1587,3 +1587,120 @@ healthcheck: peer 127\.0\.0\.1:12355 was checked to be ok
 healthcheck: peer 127\.0\.0\.1:12356 was checked to be ok
 ){3,5}$/
 --- timeout: 6
+
+
+
+=== TEST 17: health check (bad case), invalid response from a primary peer
+--- http_config eval
+"$::HttpConfig"
+. q{
+upstream foo.com {
+    server 127.0.0.1:12354;
+    server 127.0.0.1:12355;
+    server 127.0.0.1:12356 backup;
+}
+
+server {
+    listen 12354;
+    error_page  405 =200 $uri;
+    location = /status {
+        return 200 '{ "ok" : true }';
+    }
+}
+
+server {
+    listen 12355;
+    error_page  405 =200 $uri;
+    location = /status {
+        return 200 '{ "ok" : false }';
+    }
+}
+
+server {
+    listen 12356;
+    error_page  405 =200 $uri;
+    location = /status {
+        return 200 '{ "ok" : true }';
+    }
+}
+
+lua_shared_dict healthcheck 1m;
+init_worker_by_lua_block {
+    local cjson = require "cjson.safe"
+    ngx.shared.healthcheck:flush_all()
+    local hc = require "resty.upstream.healthcheck"
+    local ok, err = hc.spawn_checker{
+        shm = "healthcheck",
+        upstream = "foo.com",
+        type = "http",
+        -- http_req = "GET /status HTTP/1.0\\\\r\\\\nHost: localhost\\\\r\\\\n\\\\r\\\\n",
+        http_req = { method = "POST", path = "/status", headers = { Host = "localhost"}, body = '{ "query": "test" }' },
+        http_res_fn = function(headers, body)
+            local data, err = cjson.decode(body)
+            if err then return false, err end
+            if not data['ok'] then return false, 'not ok!' end
+            return true
+        end,
+        interval = 100,  -- 100ms
+        fall = 2,
+    }
+    if not ok then
+        ngx.log(ngx.ERR, "failed to spawn health checker: ", err)
+        return
+    end
+}
+}
+--- config
+    location = /t {
+        access_log off;
+        content_by_lua '
+            ngx.sleep(0.52)
+
+            local hc = require "resty.upstream.healthcheck"
+            ngx.print(hc.status_page())
+
+            for i = 1, 2 do
+                local res = ngx.location.capture("/proxy")
+                ngx.say("upstream addr: ", res.header["X-Foo"])
+            end
+        ';
+    }
+
+    location = /proxy {
+        proxy_pass http://foo.com/;
+        header_filter_by_lua '
+            ngx.header["X-Foo"] = ngx.var.upstream_addr;
+        ';
+    }
+--- request
+GET /t
+
+--- response_body
+Upstream foo.com
+    Primary Peers
+        127.0.0.1:12354 up
+        127.0.0.1:12355 DOWN
+    Backup Peers
+        127.0.0.1:12356 up
+upstream addr: 127.0.0.1:12354
+upstream addr: 127.0.0.1:12354
+
+--- no_error_log
+[alert]
+failed to run healthcheck cycle
+--- error_log
+healthcheck: failed http_res_fn on response from 127.0.0.1:12355: not ok!
+--- grep_error_log eval: qr/healthcheck: .*? was checked .*|warn\(\): .*(?=,)|upgrading peers version to \d+/
+--- grep_error_log_out eval
+qr/^healthcheck: peer 127\.0\.0\.1:12354 was checked to be ok
+healthcheck: peer 127\.0\.0\.1:12355 was checked to be not ok
+healthcheck: peer 127\.0\.0\.1:12356 was checked to be ok
+healthcheck: peer 127\.0\.0\.1:12354 was checked to be ok
+healthcheck: peer 127\.0\.0\.1:12355 was checked to be not ok
+warn\(\): healthcheck: peer 127\.0\.0\.1:12355 is turned down after 2 failure\(s\)
+healthcheck: peer 127\.0\.0\.1:12356 was checked to be ok
+(?:healthcheck: peer 127\.0\.0\.1:12354 was checked to be ok
+healthcheck: peer 127\.0\.0\.1:12355 was checked to be not ok
+healthcheck: peer 127\.0\.0\.1:12356 was checked to be ok
+){2,4}$/
+--- timeout: 6
