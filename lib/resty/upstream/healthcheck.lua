@@ -207,6 +207,7 @@ local function check_peer(ctx, id, peer, is_backup)
     local ok
     local name = peer.name
     local statuses = ctx.statuses
+    local res_fn = ctx.http_res_fn
     local req = ctx.http_req
 
     local sock, err = stream_sock()
@@ -253,6 +254,35 @@ local function check_peer(ctx, id, peer, is_backup)
             return
         end
     end
+
+    local headers, err = http.receive_headers(sock)
+    if err then
+        peer_error(ctx, is_backup, id, peer,
+                   "failed to receive headers from ", name, ": ", err)
+        if err == "timeout" then
+            sock:close()  -- timeout errors do not close the socket.
+        end
+        return
+    end
+
+    local body, err = http.receive_body(sock)
+    if err then
+        peer_error(ctx, is_backup, id, peer,
+                   "failed to receive body from ", name, ": ", err)
+        if err == "timeout" then
+            sock:close()  -- timeout errors do not close the socket.
+        end
+        return
+    end
+
+    if res_fn then
+        local ret, err = res_fn(headers, body)
+        if not ret then
+            peer_error(ctx, is_backup, id, peer,
+                    "failed http_res_fn on response from ", name, ": ", err)
+        end
+    end
+
     peer_ok(ctx, is_backup, id, peer)
     sock:close()
 end
@@ -587,11 +617,14 @@ function _M.spawn_checker(opts)
         return nil, "failed to get backup peers: " .. err
     end
 
+    local http_res_fn = opts.http_res_fn
+
     local ctx = {
         upstream = u,
         primary_peers = preprocess_peers(ppeers),
         backup_peers = preprocess_peers(bpeers),
         http_req = http_req,
+        http_res_fn = http_res_fn,
         timeout = timeout,
         interval = interval,
         dict = dict,

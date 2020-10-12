@@ -16,6 +16,7 @@ my $pwd = cwd();
 our $HttpConfig = <<_EOC_;
     lua_socket_log_errors off;
     lua_package_path "$pwd/../lua-resty-lock/?.lua;$pwd/lib/?.lua;$pwd/t/lib/?.lua;;";
+    lua_package_cpath "$pwd/lib/?.so;;";
 _EOC_
 
 #no_diff();
@@ -1478,27 +1479,19 @@ upstream foo.com {
     server 127.0.0.1:12356 backup;
 }
 
-# server {
-#     listen 12354;
-#     location = /status {
-#         content_by_lua '
-#             ngx.req.read_body()
-#             local data = ngx.req.get_body_data()
-#             -- ngx.log(ngx.ERR, data)
-#             if data == "{ foo = 1 }" then
-#                 ngx.exit(200)
-#             else
-#                 ngx.exit(200)
-#             end
-#         ';
-#     }
-# }
-
 server {
-    error_page  405 =200 $uri;
     listen 12354;
     location = /status {
-        return 200;
+        content_by_lua_block {
+            ngx.req.read_body()
+            local data = ngx.req.get_body_data()
+            if data == '{ "foo": 1 }' then
+                ngx.say('{ "bar": 2 }')
+                ngx.exit(200)
+            else
+                ngx.exit(500)
+            end
+        }
     }
 }
 
@@ -1506,7 +1499,7 @@ server {
     error_page  405 =200 $uri;
     listen 12355;
     location = /status {
-        return 200;
+        return 200 '{ "bar" : 2 }';
     }
 }
 
@@ -1514,19 +1507,25 @@ server {
     error_page  405 =200 $uri;
     listen 12356;
     location = /status {
-        return 200;
+        return 200 '{ "bar" : 2 }';
     }
 }
 
 lua_shared_dict healthcheck 1m;
-init_worker_by_lua '
+init_worker_by_lua_block {
+    local cjson = require "cjson.safe"
     ngx.shared.healthcheck:flush_all()
     local hc = require "resty.upstream.healthcheck"
     local ok, err = hc.spawn_checker{
         shm = "healthcheck",
         upstream = "foo.com",
         type = "http",
-        http_req = { method = "POST", path = "/status", headers = { Host = "localhost"}, body = "dupa"},
+        http_req = { method = "POST", path = "/status", headers = { Host = "localhost"}, body = '{ "foo": 1 }' },
+        http_res_fn = function(headers, body)
+            local data, err = cjson.decode(body)
+            if err then return false end
+            return data['bar'] == 2
+        end,
         valid_statuses = { 200 },
         interval = 100,  -- 100ms
         fall = 2,
@@ -1535,7 +1534,7 @@ init_worker_by_lua '
         ngx.log(ngx.ERR, "failed to spawn health checker: ", err)
         return
     end
-';
+}
 }
 --- config
     location = /t {

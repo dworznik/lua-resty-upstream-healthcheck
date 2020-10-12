@@ -50,7 +50,7 @@ function _M.receive_headers(c)
 
   local headers = {}
   while line ~= '' do
-    local _, __, name, value = tring.find(line, '^(.-):%s*(.*)')
+    local _, __, name, value = string.find(line, '^(.-):%s*(.*)')
     if not (name and value) then return nil, 'invalid http headers' end
 
     name = string.lower(name)

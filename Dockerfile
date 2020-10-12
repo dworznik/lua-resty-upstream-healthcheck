@@ -54,7 +54,6 @@ RUN make PATH=$PATH install_sw > build.log 2>&1 || (cat build.log && exit 1)
 WORKDIR /usr/src/mockeagain
 RUN make CC=$CC -j$JOBS
 
-
 WORKDIR /usr/src
 ENV PATH=/usr/src/work/nginx/sbin:/usr/src/nginx-devel-utils:$PATH
 ENV LD_PRELOAD=/usr/src/mockeagain/mockeagain.so
@@ -74,6 +73,11 @@ RUN make install
 
 WORKDIR /usr/lua-resty-core
 RUN make install
+
+WORKDIR /usr/src
+RUN git clone --depth 1 https://github.com/openresty/lua-cjson ../lua-cjson
+WORKDIR /usr/lua-cjson
+RUN DESTDIR=/usr/src make install
 
 WORKDIR /usr/src
 ADD t/lib/ t/lib/
