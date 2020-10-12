@@ -230,8 +230,7 @@ local function check_peer(ctx, id, peer, is_backup)
         return peer_fail(ctx, is_backup, id, peer)
     end
     local http = require('resty.upstream.http')
-    local bytes, err = http.send_get(sock, req.path, req.headers)
-
+    local bytes, err = http.send(sock, req.method, req.path, req.headers, req.body)
     if not bytes then
         return peer_error(ctx, is_backup, id, peer,
                           "failed to send request to ", name, ": ", err)
@@ -254,7 +253,6 @@ local function check_peer(ctx, id, peer, is_backup)
             return
         end
     end
-
     peer_ok(ctx, is_backup, id, peer)
     sock:close()
 end
