@@ -3,6 +3,10 @@ Name
 
 lua-resty-upstream-healthcheck - Health-checker for Nginx upstream servers
 
+
+[![Build Status](https://travis-ci.org/dworznik/lua-resty-upstream-healthcheck.svg?branch=master)](https://travis-ci.org/dworznik/lua-resty-upstream-healthcheck)
+
+
 Table of Contents
 =================
 
