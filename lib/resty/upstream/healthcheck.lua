@@ -86,7 +86,7 @@ local function set_peer_down_globally(ctx, is_backup, id, value)
     end
 end
 
-local function peer_fail(ctx, is_backup, id, peer)
+local function peer_fail(ctx, is_backup, id, peer, ...)
     debug("peer ", peer.name, " was checked to be not ok")
 
     local u = ctx.upstream
@@ -139,7 +139,11 @@ local function peer_fail(ctx, is_backup, id, peer)
                 " failure(s)")
         peer.down = true
         set_peer_down_globally(ctx, is_backup, id, true)
+        local peer_down_fn = ctx.peer_down_fn
+        if peer_down_fn then peer_down_fn(ctx, is_backup, id, peer, ...) end
     end
+    local peer_fail_fn = ctx.peer_fail_fn
+    if peer_fail_fn then peer_fail_fn(ctx, is_backup, id, peer, ...) end
 end
 
 local function peer_ok(ctx, is_backup, id, peer)
@@ -200,7 +204,7 @@ local function peer_error(ctx, is_backup, id, peer, ...)
     if not peer.down then
         errlog(...)
     end
-    peer_fail(ctx, is_backup, id, peer)
+    peer_fail(ctx, is_backup, id, peer, ...)
 end
 
 local function check_peer(ctx, id, peer, is_backup)
@@ -274,7 +278,6 @@ local function check_peer(ctx, id, peer, is_backup)
         end
         return
     end
-
     if res_fn then
         local ret, err = res_fn(headers, body)
         if not ret then
@@ -620,6 +623,8 @@ function _M.spawn_checker(opts)
     end
 
     local http_res_fn = opts.http_res_fn
+    local peer_fail_fn = opts.peer_fail_fn
+    local peer_down_fn = opts.peer_down_fn
 
     local ctx = {
         upstream = u,
@@ -635,6 +640,8 @@ function _M.spawn_checker(opts)
         statuses = statuses,
         version = 0,
         concurrency = concur,
+        peer_down_fn = peer_down_fn,
+        peer_fail_fn = peer_fail_fn
     }
 
     if debug_mode and opts.no_timer then
